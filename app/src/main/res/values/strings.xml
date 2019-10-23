@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MobilHesap</string>
+    <string name="new_spending_text">Yeni Harcama Girişi</string>
+    <string name="new_income_text">Yeni Gelir Girişi</string>
+    <string name="report_text">Rapor</string>
+    <string name="total_cost_text">TOPLAM TUTAR:</string>
 </resources>
