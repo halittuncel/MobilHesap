@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="350dp"
+    android:layout_gravity="center"
+    android:layout_marginLeft="32dp"
+    android:layout_marginRight="32dp"
+    android:background="@drawable/custom_button_1"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <EditText
+        android:id="@+id/item_name_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/custom_button_1"
+        android:hint="İsim"
+        android:inputType="text"
+        android:padding="10dp" />
+
+    <EditText
+        android:id="@+id/item_cost_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/custom_button_1"
+        android:hint="Miktar"
+        android:inputType="numberDecimal"
+        android:padding="10dp" />
+
+    <EditText
+        android:id="@+id/item_date_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/custom_button_1"
+        android:clickable="true"
+        android:editable="false"
+        android:focusable="true"
+        android:hint="Tarih"
+        android:padding="10dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="32dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/add_item_button"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="4dp"
+            android:textColor="#FFF"
+            android:background="@drawable/custom_button_4"
+            android:padding="10dp"
+            android:text="Ekle" />
+
+        <Button
+            android:id="@+id/close_modal_button"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:textColor="#FFF"
+            android:background="@drawable/custom_button_3"
+            android:padding="10dp"
+            android:text="İPTAL" />
+    </LinearLayout>
+
+</LinearLayout>
+
+
