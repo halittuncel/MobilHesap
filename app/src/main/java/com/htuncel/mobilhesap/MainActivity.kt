@@ -2,6 +2,7 @@ package com.htuncel.mobilhesap
 
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -15,8 +16,10 @@ import androidx.appcompat.app.AlertDialog
 import kotlinx.android.synthetic.main.add_item_modal.view.*
 import java.util.*
 import android.widget.EditText
+import androidx.room.Room
 import java.lang.Exception
 import java.math.BigDecimal
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.text.ParseException
 import java.util.UUID.randomUUID
@@ -31,19 +34,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var reportButton: Button
     private lateinit var totalCostText: TextView
     private lateinit var myCalendar: Calendar
-
-    // TODO
-    // Create SQLite database hold 2 table; income, spending
+    private lateinit var db: AppDB
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        db = Room.databaseBuilder(applicationContext, AppDB::class.java, "ItemDB")
+            .build()
 
         newIncomeButton = findViewById(R.id.new_income_button)
         newSpendingButton = findViewById(R.id.new_spending_button)
         reportButton = findViewById(R.id.report_button)
         totalCostText = findViewById(R.id.total_cost_text)
         myCalendar = Calendar.getInstance()
+
+        calculateCost()
 
         newIncomeButton.setOnClickListener {
             onOpenModal("INCOME")
@@ -54,10 +60,33 @@ class MainActivity : AppCompatActivity() {
         }
 
         reportButton.setOnClickListener {
-            // TODO
-            // Create new activity and redirect user to that activity
-            Toast.makeText(this, "income", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this@MainActivity, ReportActivity::class.java)
+            startActivity(intent)
         }
+    }
+
+    private fun calculateCost() {
+        var income: BigDecimal = BigDecimal.ZERO
+        var spending: BigDecimal = BigDecimal.ZERO
+
+        Thread {
+            // val query = "SELECT * FROM Item_Entity ORDER BY item_date ASC"
+            // val items = db.itemDAO().runtimeQuery(SimpleSQLiteQuery(query))
+
+            val items = db.itemDAO().readAllItems()
+
+            items.forEach {
+                when {
+                    it.type == "INCOME" -> income += it.cost.toBigDecimal()
+                    it.type == "SPENDING" -> spending += it.cost.toBigDecimal()
+                }
+            }
+            var totalCost: BigDecimal = income - spending
+            totalCostText.text = totalCost.toString()
+
+        }.start()
+
+
     }
 
     private fun onOpenModal(type: String) {
@@ -89,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        var date = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+        val date = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
             myCalendar.set(Calendar.YEAR, year)
             myCalendar.set(Calendar.MONTH, month)
             myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
@@ -108,17 +137,10 @@ class MainActivity : AppCompatActivity() {
 
         // Buttons of modal
         mDialogView.add_item_button.setOnClickListener {
-
             // Get the values inside the modal
             val nameText = mDialogView.item_name_edit_text.text.toString()
             val costText = mDialogView.item_cost_edit_text.text.toString()
             val dateText = mDialogView.item_date_edit_text.text.toString()
-
-
-            if (!(validateFields(nameText, costText, dateText))) {
-                //Toast.makeText(this, "Check the fields", Toast.LENGTH_SHORT).show()
-                //return@setOnClickListener
-            }
 
             if (!validateName(nameText)) {
                 mDialogView.item_date_edit_text.setBackgroundResource(R.drawable.custom_button_1)
@@ -153,37 +175,19 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
-            } else {
-                // Show values in a toast
-                val uniqueID = randomUUID().toString()
-                var message = "id: $uniqueID \n" +
-                        "name: $nameText \n" +
-                        "cost: $costText \n " +
-                        "date: $dateText"
-
-                when (type) {
-                    "INCOME" -> {
-                        message = message.plus("\n INCOME")
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-                        // Dismiss the modal
-                        mAlertDialog.dismiss()
-                    }
-                    "SPENDING" -> {
-                        message = message.plus("\n SPENDING")
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-                        // Dismiss the modal
-                        mAlertDialog.dismiss()
-                    }
-                    else -> {
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-                        // Dismiss the modal
-                        mAlertDialog.dismiss()
-                    }
+            } else when (type) {
+                "INCOME" -> {
+                    saveToDatabase(nameText, costText, type)
+                }
+                "SPENDING" -> {
+                    saveToDatabase(nameText, costText, type)
+                }
+                else -> {
                 }
             }
+
+            // Dismiss the modal
+            mAlertDialog.dismiss()
         }
 
         mDialogView.close_modal_button.setOnClickListener {
@@ -191,6 +195,54 @@ class MainActivity : AppCompatActivity() {
             mAlertDialog.dismiss()
         }
 
+
+    }
+
+    private fun saveToDatabase(
+        nameText: String,
+        costText: String,
+        type: String
+    ) {
+
+        val cost: BigDecimal = costText.toBigDecimal()
+
+        var income: BigDecimal = BigDecimal.ZERO
+        var spending: BigDecimal = BigDecimal.ZERO
+        var totalCost: BigDecimal = BigDecimal.ZERO
+
+        var items: Array<ItemEntity> = emptyArray()
+
+        val uniqueID = randomUUID().toString()
+        Thread {
+            val item = ItemEntity(
+                id = uniqueID,
+                name = nameText,
+                cost = cost.toString(),
+                date = myCalendar.time.time,
+                type = type
+            )
+
+            db.itemDAO().saveItem(item)
+
+            items = db.itemDAO().readAllItems()
+
+            items.forEach {
+                when {
+                    it.type == "INCOME" -> income += it.cost.toBigDecimal()
+                    it.type == "SPENDING" -> spending += it.cost.toBigDecimal()
+                }
+            }
+            totalCost = income - spending
+
+            val totCostTextView = findViewById<TextView>(R.id.total_cost_text)
+
+
+
+            runOnUiThread {
+                totCostTextView.text = totalCost.toString()
+            }
+
+        }.start()
 
     }
 
@@ -221,7 +273,6 @@ class MainActivity : AppCompatActivity() {
     private fun validateCost(costText: String): Boolean {
         try {
             val cost = costText.toBigDecimal()
-            Log.i("cost", cost.toString())
             return cost > BigDecimal.ZERO
         } catch (e: Exception) {
             Toast.makeText(this, "Miktar kısmı doğru girilmelidir.", Toast.LENGTH_SHORT).show()
