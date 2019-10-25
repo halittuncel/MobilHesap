@@ -246,6 +246,14 @@ class MainActivity : AppCompatActivity() {
 
         }.start()
 
+
+
+        Toast.makeText(
+            this,
+            "Veri Kaydedildi.",
+            Toast.LENGTH_SHORT
+        ).show()
+
     }
 
     // This is for date edit text when user chooses a date from date dialog takes the result and sets it to the edit text
